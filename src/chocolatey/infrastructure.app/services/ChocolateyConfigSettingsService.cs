@@ -161,17 +161,31 @@ namespace chocolatey.infrastructure.app.services
 
         public void source_remove(ChocolateyConfiguration configuration)
         {
-            var source = configFileSettings.Sources.FirstOrDefault(p => p.Id.is_equal_to(configuration.SourceCommand.Name));
-            if (source != null)
-            {
-                configFileSettings.Sources.Remove(source);
-                _xmlService.serialize(configFileSettings, ApplicationParameters.GlobalConfigFileLocation);
+            List<ConfigFileSourceSetting> sources;
 
-                if (!configuration.QuietOutput) this.Log().Warn(() => "Removed {0}".format_with(source.Id));
+            if (configuration.SourceCommand.Name.Equals(ApplicationParameters.AllSources))
+            {
+                sources = configFileSettings.Sources.ToList();
             }
             else
             {
+                var source = configFileSettings.Sources.FirstOrDefault(p => p.Id.is_equal_to(configuration.SourceCommand.Name));
+                sources = source != null ? new List<ConfigFileSourceSetting> { source } : new List<ConfigFileSourceSetting>();
+            }
+
+            if (sources.Count == 0)
+            {
                 if (!configuration.QuietOutput) this.Log().Warn(NO_CHANGE_MESSAGE);
+            }
+            else
+            {
+                foreach (var source in sources)
+                {
+                    configFileSettings.Sources.Remove(source);
+                    _xmlService.serialize(configFileSettings, ApplicationParameters.GlobalConfigFileLocation);
+
+                    if (!configuration.QuietOutput) this.Log().Warn(() => "Removed {0}".format_with(source.Id));
+                }
             }
         }
 
